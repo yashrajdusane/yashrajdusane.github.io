@@ -1,142 +1,119 @@
-
-
 <!-- this script got from www.htmlbestcodes.com-Coded by: Krishna Eydat -->
 <html>
 <head>
-</head>
-<body onload="disco()">
-<script language="JavaScript">
-<!--
-//you can assign the initial color of the background here
-r=255;
-g=255;
-b=255;
-flag=0;
-t=new Array;
-o=new Array;
-d=new Array;
-
-function hex(a,c)
-{
-t[a]=Math.floor(c/16)
-o[a]=c%16
-switch (t[a])
-{
-case 10:
-t[a]='A';
-break;
-case 11:
-t[a]='B';
-break;
-case 12:
-t[a]='C';
-break;
-case 13:
-t[a]='D';
-break;
-case 14:
-t[a]='E';
-break;
-case 15:
-t[a]='F';
-break;
-default:
-break;
-}
-switch (o[a])
-{
-case 10:
-o[a]='A';
-break;
-case 11:
-o[a]='B';
-break;
-case 12:
-o[a]='C';
-break;
-case 13:
-o[a]='D';
-break;
-case 14:
-o[a]='E';
-break;
-case 15:
-o[a]='F';
-break;
-default:
-break;
-}
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<style>
+ul.demo1 li{ /* initial CSS for demo 1 (before it's animated) */
+opacity: 0; /* animate opacity into view */
+left: -100%; /* animate left property into view */
 }
 
-function ran(a,c)
-{
-if ((Math.random()>2/3||c==0)&&c<255)
-{
-c++
-d[a]=2;
+ul.demo1-after li{ /* Post CSS for demo 1 (after it's animated). "demo1-after" dynamically added to UL */
+opacity: 1;
+left: 0;
 }
-else
-{
-if ((Math.random()<=1/2||c==255)&&c>0)
-{
-c--
-d[a]=1;
-}
-else d[a]=0;
-}
-return c
-}
-function do_it(a,c)
-{
-if ((d[a]==2&&c<255)||c==0)
-{
-c++
-d[a]=2
-}
-else
-if ((d[a]==1&&c>0)||c==255)
-{
-c--;
-d[a]=1;
-}
-if (a==3)
-{
-if (d[1]==0&&d[2]==0&&d[3]==0)
-flag=1
-}
-return c
-}
-function disco()
-{
-if (flag==0)
-{
-r=ran(1, r);
-g=ran(2, g);
-b=ran(3, b);
-hex(1,r)
-hex(2,g)
-hex(3,b)
-document.body.style.background="#"+t[1]+o[1]+t[2]+o[2]+t[3]+o[3]
-flag=50
-}
-else
-{
-r=do_it(1, r)
-g=do_it(2,g)
-b=do_it(3,b)
-hex(1,r)
-hex(2,g)
-hex(3,b)
-document.body.style.background="#"+t[1]+o[1]+t[2]+o[2]+t[3]+o[3]
-flag--
-}
+</style>
 
-setTimeout('disco()',50)
-}
-//-->
+<script type="text/javascript">
+(function($){
+
+	var defaults = {
+		duration: 0.5,
+		pause: 0.5,
+		delaybeforestart: 'onvisible',
+		postclass: 'animated-after'
+	}
+
+	function css3propmap(){ // param: {css3prop1: value1, css3prop2: value2, etc}
+		var vendorprefixes = ['-ms-', '-o-', '-moz-', '-webkit-'],
+			propmap = {}
+			for (var i=0; i<arguments.length; i++){
+				propmap[arguments[i][0]] = arguments[i][1]
+				for (var t=0; t<vendorprefixes.length; t++){
+					propmap[vendorprefixes[t] + arguments[i][0]] = arguments[i][1]
+				}
+			}
+		return propmap
+	}
+
+	
+	$.fn.animatelist = function(options){
+		if (typeof $.animatedlists == "undefined") // global var to store ref to ULs that will be animated
+			$.animatedlists=[]
+
+		function inrange(range, field){ // check if "playing field" is inside range
+			var rangespan = range[1]-range[0], fieldspan = field[1]-field[0]
+			if ( (range[0]-field[0]) > 0 && (range[0]-field[0]) <= fieldspan ) // if top of range (viewport) is on field
+				return true
+			else{
+				if ( (range[0]-field[0]) < 0 && (range[0]+rangespan) >= field[0] ) // if part of range overlaps field
+					return true
+			}
+			return false
+		}
+
+		if (Array.filter && !$(window).data('scrollbind')){ // on window scroll
+			var $window = $(window)
+			$window.bind('scroll.scrollbind', function(){
+				var scrolltop = $window.scrollTop(), animatedlists = $.animatedlists
+				animatedlists = animatedlists.filter(function(el, index){ // find ULs that are visible on the screen and should be shown
+					return (!el.shownflag && inrange([el.offsettop, el.offsettop+el.ulheight], [scrolltop, scrolltop+$window.height()]))
+				})
+				for (var i=0; i < animatedlists.length; i++){
+					animatedlists[i].$ul.addClass(animatedlists[i].postclass)
+					animatedlists[i].shownflag = true
+				}			
+			})
+			$window.bind('load', function(){ // refresh UL top offsets when the page fully loads
+				var animatedlists = $.animatedlists
+				for (var i=0; i < animatedlists.length; i++){
+					animatedlists[i].offsettop = animatedlists[i].$ul.offset().top
+					animatedlists[i].ulheight = animatedlists[i].$ul.outerHeight()
+				}
+				$window.trigger('scroll.scrollbind')
+			})
+			$(window).data('scrollbind', true)
+		}
+
+		return this.each(function(){
+			var $ul = $(this).css({overflow:'hidden'})
+			var o = $.extend({}, defaults, options)
+			var $lis = $ul.children('li').css({position:'relative'})
+			$lis.each(function(i){
+				$(this).css(css3propmap(['transition', 'all ' + o.duration + 's ease-in-out ' + i * (o.pause) + 's']))
+			})
+			if (typeof o.delaybeforestart == "number"){
+				setTimeout(function(){$ul.addClass(o.postclass)}, o.delaybeforestart * 1000)
+			}
+			else if (o.delaybeforestart == "onvisible" && Array.filter){
+				var offsettop = $ul.offset().top
+				$.animatedlists.push({$ul:$ul, offsettop:offsettop, ulheight:$ul.outerHeight(), shownflag:false, postclass:o.postclass})
+			}
+			else{
+				$ul.addClass(o.postclass)
+			}
+		}) // end return
+	}
+
+})(jQuery);
 </script>
 
-<br/>
-<p><a target="_blank" href="http://www.htmlbestcodes.com/"><span style="font-size: 8pt; text-decoration: none">HTML Best Codes</span></a></p>
+<script>
+
+jQuery(function($){ // on DOM load
+	$('ul.demo1').animatelist({pause: 1, postclass: 'demo1-after'})
+})
+
+</script>
+</head>
+<body>
+<ul class="demo1">
+	<li><a href="http://www.htmlbestcodes.com/">Useful free HTML code</a></li>
+	<li><a href="http://www.htmlbestcodes.com/">Make your website more interesting</a></li>
+	<li><a href="http://www.htmlbestcodes.com/">Impelement easy</a></li>
+	<li><a href="http://www.htmlbestcodes.com/">Beautiful and interesting</a></li>
+	<li><a href="http://www.htmlbestcodes.com/">All at htmlbestcodes.com</a></li>
+	<li><a href="http://www.htmlbestcodes.com/">www.htmlbestcodes.com</a></li>
+</ul>
 </body>
 </html>
